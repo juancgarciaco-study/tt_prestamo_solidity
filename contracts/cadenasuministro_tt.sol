@@ -28,33 +28,20 @@ contract CadenaSuministro {
 
     // Constructor que inicializa el propietario del contrato
     constructor() {
-
-/**
- * Marks a product as delivered.
- *
- * @param _productId The ID of the product to deliver.
- *
- * Requirements:
- * - Only the contract owner can call this function.
- * - The product must exist and not be already delivered.
- *
- * Effects:
- * - Updates the product's status to delivered.
- * - Increments the quantity of delivered products.
- *
- * Emits:
- * - A `ProductoEntregado` event with the product ID and owner's address.
- */        propietario = msg.sender;
+        propietario = msg.sender;
     }
-       
-       /**
-        * Marks a product as delivered.
-        *
-        * @notice Only the contract owner can call this function.
-        * @param _productId The ID of the product to deliver.
-        */
+
+    modifier estaProductoEntregado(uint256 _productId) {
+        Producto storage producto = productos[_productId - 1];
+        if (producto.estado == 0) _;
+        else revert(unicode"No se puede realizar la operación, El producto ya se encuentra entregado");
+    }
+
     // Función para marcar un producto como entregado
-    function entregarProducto(uint256 _productId) public {
+    function entregarProducto(uint256 _productId)
+        public
+        estaProductoEntregado(_productId)
+    {
         require(
             msg.sender == propietario,
             "Solo el propietario puede llamar a esta funcion"
@@ -62,12 +49,12 @@ contract CadenaSuministro {
         require(_productId <= productos.length, "ID de producto no valido");
 
         Producto storage producto = productos[_productId - 1];
-        require(producto.estado == 0, "El producto ya ha sido entregado");
+        // require(producto.estado == 0, "El producto ya ha sido entregado");
 
         producto.propietario = propietario;
         producto.estado = 1;
 
-        cantidadProductosEntregados[_productId] += 1;
+        cantidadProductosEntregados[_productId] = cantidadProductos[_productId];
 
         emit ProductoEntregado(_productId, propietario);
     }
@@ -75,6 +62,7 @@ contract CadenaSuministro {
     // Funcion para agregar mas cantidad a un producto existente
     function agregarProductoExistente(uint256 _productId, uint256 _cantidad)
         public
+        estaProductoEntregado(_productId)
     {
         require(
             msg.sender == propietario,
@@ -100,9 +88,9 @@ contract CadenaSuministro {
         require(_cantidad > 0, "Cantidad no valida");
 
         productos.push(Producto(_nombreProducto, address(0), 0));
-        cantidadProductos[productos.length] = _cantidad;
-        cantidadProductosEntregados[productos.length] = 0;
-
+        uint256 _id = productos.length;
+        cantidadProductos[_id] = _cantidad;
+        cantidadProductosEntregados[_id] = 0;
     }
 
     // Función para obtener la cantidad de productos por producto
