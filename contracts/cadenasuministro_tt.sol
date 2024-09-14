@@ -15,7 +15,6 @@ contract CadenaSuministro {
 
     // Mapeo para almacenar la cantidad de productos por producto
     mapping(uint256 => uint256) public cantidadProductos;
-    mapping(uint256 => uint256) public cantidadProductosEntregados;
 
     // Dirección del propietario del contrato
     address public propietario;
@@ -34,7 +33,10 @@ contract CadenaSuministro {
     modifier estaProductoEntregado(uint256 _productId) {
         Producto storage producto = productos[_productId - 1];
         if (producto.estado == 0) _;
-        else revert(unicode"No se puede realizar la operación, El producto ya se encuentra entregado");
+        else
+            revert(
+                unicode"No se puede realizar la operación, El producto ya se encuentra entregado"
+            );
     }
 
     // Función para marcar un producto como entregado
@@ -53,8 +55,6 @@ contract CadenaSuministro {
 
         producto.propietario = propietario;
         producto.estado = 1;
-
-        cantidadProductosEntregados[_productId] = cantidadProductos[_productId];
 
         emit ProductoEntregado(_productId, propietario);
     }
@@ -90,7 +90,6 @@ contract CadenaSuministro {
         productos.push(Producto(_nombreProducto, address(0), 0));
         uint256 _id = productos.length;
         cantidadProductos[_id] = _cantidad;
-        cantidadProductosEntregados[_id] = 0;
     }
 
     // Función para obtener la cantidad de productos por producto
@@ -107,16 +106,16 @@ contract CadenaSuministro {
         uint256[] memory ids = new uint256[](productos.length);
         string[] memory nombres = new string[](productos.length);
         uint256[] memory cantidades = new uint256[](productos.length);
-        uint256[] memory cantidadesEntregadas = new uint256[](productos.length);
+        uint256[] memory estados = new uint256[](productos.length);
 
         for (uint256 i = 0; i < productos.length; i++) {
             ids[i] = i + 1;
             nombres[i] = productos[i].nombreProducto;
             cantidades[i] = cantidadProductos[i + 1];
-            cantidadesEntregadas[i] = cantidadProductosEntregados[i + 1];
+            estados[i] = productos[i].estado;
         }
 
-        return (ids, nombres, cantidades, cantidadesEntregadas);
+        return (ids, nombres, cantidades, estados);
     }
 
     function zero() public pure returns (uint256) {
